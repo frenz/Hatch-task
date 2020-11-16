@@ -39,16 +39,17 @@ func byteToMapInterface(jsonData []byte) map[string]interface{} {
 func byteToArrayInterface(data []byte) []interface{} {
 	return byteToInterface(data).([]interface{})
 }
+
 func readBytes(data []byte) (result map[string]bool) {
 	result = make(map[string]bool)
 	for _, b := range data {
-		if string(b) == "[" {
+		if b == '[' {
 			for _, item := range byteToArrayInterface(data) {
 				key := encodeToString(item)
 				result[key] = true
 			}
 		}
-		if string(b) == "{" {
+		if b == '{' {
 			key := encodeToString(byteToMapInterface(data))
 			result[key] = true
 		}
@@ -56,6 +57,19 @@ func readBytes(data []byte) (result map[string]bool) {
 	}
 	return result
 }
+
+func compareHashMaps(mapSource, mapTarget map[string]bool) bool {
+	if len(mapSource) == len(mapTarget) {
+		for k := range mapSource {
+			if mapTarget[k] != true {
+				return false
+			}
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
 	fmt.Printf("Starting compare-json.go...\n")
 	fileSource := flag.String("src-json", "./data/input1.json", "First json file to be compaired")
@@ -72,5 +86,9 @@ func main() {
 	go func() {
 		chTarget <- readBytes(fileJSONToByte(*fileTarget))
 	}()
-	fmt.Printf("%v\n%v\n", <-chSource, <-chTarget)
+	if compareHashMaps(<-chSource, <-chTarget) {
+		fmt.Printf("Two files contains some data!!!\n")
+	} else {
+		fmt.Printf("Two files contains different data!!!\n")
+	}
 }
