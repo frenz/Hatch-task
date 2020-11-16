@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -24,6 +25,29 @@ func Test_compareHashMaps(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := compareHashMaps(tt.args.mapSource, tt.args.mapTarget); got != tt.want {
 				t.Errorf("compareHashMaps() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_readBytes(t *testing.T) {
+	type args struct {
+		data []byte
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRes map[string]bool
+	}{
+		{"bar", args{[]byte("{\"name\":\"test json\",\"id\":\"jhasdad\"}")}, map[string]bool{"65656636323230396538393737393039313462303762623562383766363132373939383662383864": true}},
+		{"foo", args{[]byte("{\"id\":\"wqweq\",\"name\":\"test json 2\"}")}, map[string]bool{"64383166343664386465653835613333343261396335313830356464643339643939393865386236": true}},
+		{"foobar", args{[]byte("[{\"id\":\"wqweq\",\"name\":\"test json 2\"},{\"name\":\"test json\",\"id\":\"jhasdad\"}]")}, map[string]bool{"65656636323230396538393737393039313462303762623562383766363132373939383662383864": true, "64383166343664386465653835613333343261396335313830356464643339643939393865386236": true}},
+		{"barfoo", args{[]byte("[{\"name\":\"test json\",\"id\":\"jhasdad\"},{\"id\":\"wqweq\",\"name\":\"test json 2\"}]")}, map[string]bool{"65656636323230396538393737393039313462303762623562383766363132373939383662383864": true, "64383166343664386465653835613333343261396335313830356464643339643939393865386236": true}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotRes := readBytes(tt.args.data); !reflect.DeepEqual(gotRes, tt.wantRes) {
+				t.Errorf("readBytes() = %v, want %v", gotRes, tt.wantRes)
 			}
 		})
 	}
