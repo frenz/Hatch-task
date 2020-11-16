@@ -59,15 +59,14 @@ func readBytes(data []byte) (result map[string]bool) {
 }
 
 func compareHashMaps(mapSource, mapTarget map[string]bool) bool {
-	if len(mapSource) == len(mapTarget) {
-		for k := range mapSource {
-			if mapTarget[k] != true {
-				return false
-			}
-			return true
+	for k := range mapSource {
+		if mapTarget[k] != true {
+			return false
 		}
+		delete(mapTarget, k)
+		delete(mapSource, k)
 	}
-	return false
+	return (len(mapSource) + len(mapTarget)) == 0
 }
 
 func main() {

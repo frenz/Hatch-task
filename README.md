@@ -60,6 +60,8 @@ It is quite difficult have collitions, but it is still possible, we should consi
 Garbage collector will clean memory after hashed inputs
 goroutine will help to read two files quicker
 
+during the comparison phase for each found we will remove those keys from source and target maps
+
 * clone repository:
 ```
     git clone git@github.com:frenz/Hatch-task.git
