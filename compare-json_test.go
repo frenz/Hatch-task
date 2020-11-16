@@ -52,3 +52,24 @@ func Test_readBytes(t *testing.T) {
 		})
 	}
 }
+
+func Test_fileJSONToByte(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []byte
+	}{
+		{"foo", args{"./data/input2.json"}, []byte("[{\"id\":\"wqweq\",\"name\":\"test json 2\"},{\"name\":\"test json\",\"id\":\"jhasdad\"}]")},
+		{"bar", args{"./data/input1.json"}, []byte("[{\"name\":\"test json\",\"id\":\"jhasdad\"},{\"name\":\"test json 2\",\"id\":\"wqweq\"}]")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := fileJSONToByte(tt.args.name); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("fileJSONToByte() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

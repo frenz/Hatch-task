@@ -1,8 +1,1 @@
-[{
-	"id":"wqweq",
-	"name":"test json 2"
-},
-{
-	"name":"test json",
-	"id":"jhasdad"
-}]
+[{"id":"wqweq","name":"test json 2"},{"name":"test json","id":"jhasdad"}]
