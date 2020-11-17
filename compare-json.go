@@ -45,7 +45,17 @@ func streamToMapHash(filename string) (res map[string]bool, err error) {
 		return res, err
 	}
 
-	if t == "[" {
+	if fmt.Sprintf("%v", t) == "{" {
+		f.Close()
+		f, err := os.Open(filename)
+		if err != nil {
+			return res, err
+		}
+
+		defer f.Close()
+		fileStream := bufio.NewReader(f)
+		dec := json.NewDecoder(fileStream)
+		res = make(map[string]bool)
 		var m interface{}
 		err = dec.Decode(&m)
 		if err != nil {
