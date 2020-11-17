@@ -75,3 +75,13 @@ by default is comparing input1.json and input2.json already added in the folder 
 ```
     go run compare-json -src-json<source file> -tgt-json<target file>
 ```
+* run tests
+```
+    go run tests -v
+```
+
+## Possible improvements - different approaches
+
+1. Load source file complete and target file object by object
+2. Use reflect package to compare json objects
+

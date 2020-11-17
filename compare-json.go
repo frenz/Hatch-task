@@ -1,61 +1,20 @@
 package main
 
 import (
+	"bufio"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"log"
+	"os"
 )
 
 func encodeToString(input interface{}) string {
 	hash := sha1.New()
 	hash.Write([]byte(fmt.Sprintf("%v", input)))
 	return fmt.Sprintf("%x", hex.EncodeToString(hash.Sum(nil)))
-}
-
-func fileJSONToByte(name string) []byte {
-	jsonData, err := ioutil.ReadFile(name)
-	if err != nil {
-		fmt.Print(err)
-	}
-	return jsonData
-}
-func byteToInterface(jsonData []byte) interface{} {
-	var result interface{}
-	// unmarshall it
-	err := json.Unmarshal(jsonData, &result)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	return result
-}
-
-func byteToMapInterface(jsonData []byte) map[string]interface{} {
-	return byteToInterface(jsonData).(map[string]interface{})
-}
-
-func byteToArrayInterface(data []byte) []interface{} {
-	return byteToInterface(data).([]interface{})
-}
-
-func readBytes(data []byte) (result map[string]bool) {
-	result = make(map[string]bool)
-	for _, b := range data {
-		if b == '[' {
-			for _, item := range byteToArrayInterface(data) {
-				key := encodeToString(item)
-				result[key] = true
-			}
-		}
-		if b == '{' {
-			key := encodeToString(byteToMapInterface(data))
-			result[key] = true
-		}
-		return result
-	}
-	return result
 }
 
 func compareHashMaps(mapSource, mapTarget map[string]bool) bool {
@@ -68,6 +27,54 @@ func compareHashMaps(mapSource, mapTarget map[string]bool) bool {
 	}
 	return (len(mapSource) + len(mapTarget)) == 0
 }
+func streamToMapHash(filename string) (res map[string]bool, err error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return res, err
+	}
+
+	defer f.Close()
+
+	fileStream := bufio.NewReader(f)
+	dec := json.NewDecoder(fileStream)
+	res = make(map[string]bool)
+
+	// read open bracket
+	t, err := dec.Token()
+	if err != nil {
+		return res, err
+	}
+
+	if t == "[" {
+		var m interface{}
+		err = dec.Decode(&m)
+		if err != nil {
+			return res, err
+		}
+
+		res[encodeToString(m)] = true
+	} else {
+		// while the array contains values
+		for dec.More() {
+			var m interface{}
+			// decode an array value (Message)
+			err = dec.Decode(&m)
+			if err != nil {
+				return res, err
+			}
+
+			res[encodeToString(m)] = true
+		}
+	}
+
+	// read closing bracket
+	t, err = dec.Token()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return res, nil
+}
 
 func main() {
 	fmt.Printf("Starting compare-json.go...\n")
@@ -79,11 +86,21 @@ func main() {
 	chSource := make(chan map[string]bool)
 	chTarget := make(chan map[string]bool)
 	go func() {
-		chSource <- readBytes(fileJSONToByte(*fileSource))
+		m, err := streamToMapHash(*fileSource)
+		if err != nil {
+			fmt.Printf("Error: %v", err)
+			os.Exit(0)
+		}
+		chSource <- m
 	}()
 
 	go func() {
-		chTarget <- readBytes(fileJSONToByte(*fileTarget))
+		m, err := streamToMapHash(*fileTarget)
+		if err != nil {
+			fmt.Printf("Error: %v", err)
+			os.Exit(0)
+		}
+		chTarget <- m
 	}()
 	if compareHashMaps(<-chSource, <-chTarget) {
 		fmt.Printf("Two files contains some data!!!\n")
